@@ -1,2 +1,26 @@
 @import "tailwindcss";
 
+@theme {
+  --color-status-up: theme(colors.emerald.500);
+  --color-status-warning: theme(colors.amber.500);
+  --color-status-down: theme(colors.rose.500);
+
+  --color-bg-panel: var(--color-bg-panel);
+  --color-border-main: var(--color-border-main);
+}
+
+@variant dark (&:where(.dark, .dark *));
+
+:root {
+  --color-bg-panel: #ffffff;
+  --color-border-main: #e2e8f0;
+}
+
+.dark {
+  --color-bg-panel: #0f172a;
+  --color-border-main: #1e293b;
+}
+
+body {
+  @apply bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-50 transition-colors duration-200;
+}

@@ -1,10 +1,11 @@
 import { create } from "zustand";
-import { MonitorSite } from "../types/monitor";
+import { MonitorSite, CheckResult } from "../types/monitor";
 
 interface MonitorState {
   sites: MonitorSite[];
   addSite: (name: string, url: string) => void;
   removeSite: (id: string) => void;
+  tickMetrics: () => void;
 }
 
 export const useMonitorStore = create<MonitorState>((set) => ({
@@ -15,22 +16,13 @@ export const useMonitorStore = create<MonitorState>((set) => ({
       url: "https://mystartup.com",
       isActive: true,
       createdAt: Date.now(),
-      history: [
-        {
-          id: "h-1",
-          timestamp: Date.now() - 60000,
-          status: "up",
-          latency: 124,
-          statusCode: 200,
-        },
-        {
-          id: "h-2",
-          timestamp: Date.now(),
-          status: "up",
-          latency: 142,
-          statusCode: 200,
-        },
-      ],
+      history: Array.from({ length: 89 }, (_, i) => ({
+        id: `init-${i}`,
+        timestamp: Date.now() - (89 - i) * 60000,
+        status: Math.random() > 0.05 ? "up" : "down",
+        latency: Math.floor(Math.random() * 100) + 120,
+        statusCode: Math.random() > 0.05 ? 200 : 500,
+      })),
     },
   ],
 
@@ -50,5 +42,29 @@ export const useMonitorStore = create<MonitorState>((set) => ({
   removeSite: (id) =>
     set((state) => ({
       sites: state.sites.filter((site) => site.id !== id),
+    })),
+
+  tickMetrics: () =>
+    set((state) => ({
+      sites: state.sites.map((site) => {
+        if (!site.isActive) return site;
+
+        const isUp = Math.random() > 0.04;
+        const newCheck: CheckResult = {
+          id: `tick-${Date.now()}-${Math.random()}`,
+          timestamp: Date.now(),
+          status: isUp ? "up" : "down",
+          latency: isUp ? Math.floor(Math.random() * 80) + 100 : 0,
+          statusCode: isUp ? 200 : 504,
+          errorReason: isUp ? undefined : "Gateway Timeout",
+        };
+
+        const updatedHistory = [...site.history, newCheck];
+        
+        return {
+          ...site,
+          history: updatedHistory.length > 90 ? updatedHistory.slice(1) : updatedHistory,
+        };
+      }),
     })),
 }));
