@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Header } from "./components/Header";
 import { Sidebar } from "./components/Sidebar";
+import { TooltipProvider } from "@radix-ui/react-tooltip";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,6 +28,7 @@ export default function RootLayout({
   return (
     <html
       lang="en">
+        <TooltipProvider delayDuration={100}>
       <body className="antialiased">
         <div className="relative flex min-h-screen flex-col">
           <Header />
@@ -40,6 +42,7 @@ export default function RootLayout({
           </div>
         </div>
       </body>
+      </TooltipProvider>
     </html>
   );
 }

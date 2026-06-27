@@ -19,10 +19,11 @@ export const useMonitorStore = create<MonitorState>((set) => ({
       history: Array.from({ length: 89 }, (_, i) => ({
         id: `init-${i}`,
         timestamp: Date.now() - (89 - i) * 60000,
-        status: Math.random() > 0.05 ? "up" : "down",
-        latency: Math.floor(Math.random() * 100) + 120,
-        statusCode: Math.random() > 0.05 ? 200 : 500,
-      })),
+        status: "up",
+        latency: 120,
+        statusCode: 200,
+})),
+
     },
   ],
 

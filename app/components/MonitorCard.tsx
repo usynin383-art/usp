@@ -10,6 +10,7 @@ interface MonitorCardProps {
 
 export const MonitorCard: FC<MonitorCardProps> = ({ site }) => {
     const history = useMonitorStore((state) => state.sites.find(s => s.id === site.id)?.history || []);
+    const currentStatus = history[history.length - 1]?.status || "up";
 
     return (
     <div className="flex flex-col gap-5 p-6 rounded-xl border bg-white border-slate-100 shadow-sm transition-all dark:bg-slate-900 dark:border-slate-800">
@@ -22,10 +23,15 @@ export const MonitorCard: FC<MonitorCardProps> = ({ site }) => {
                     {site.url}
                 </p>
             </div>
-            <StatusBadge status={site.isActive ? "up" : "down"} />
+            <StatusBadge status={currentStatus} />
         </div>
-        
-        <MonitorCardRow history={history} />
+        <div className="mt-3 flex flex-col gap-1.5">
+  <MonitorCardRow history={history} />
+  <div className="flex items-center justify-between text-[10px] font-medium text-slate-400 font-mono">
+    <span>90 дней назад</span>
+    <span>Сегодня</span>
+  </div>
+</div>
     </div>
     )
 }
