@@ -10,9 +10,28 @@ interface MonitorCardRowProps {
 }
 
 export const MonitorCardRow: FC<MonitorCardRowProps> = ({ history }) => {
+  const totalBars = 90;
+  const emptyBarsCount = Math.max(0, totalBars - history.length);
+  const emptyBars = Array.from({ length: emptyBarsCount }, (_, i) => ({
+    id: `empty-${i}`,
+    isEmpty: true,
+  }));
+
+  const fullDisplayList = [...history, ...emptyBars];
+
+
   return (
     <div className="flex h-8 items-end gap-[3px] w-full">
-      {history.map((item) => {
+      {fullDisplayList.map((item) => {
+        if ("isEmpty" in item) {
+          return (
+            <div
+              key={item.id}
+              className="h-full flex-1 min-w-[2px] bg-slate-100 dark:bg-slate-800 rounded-xs opacity-40"
+            />
+          );
+        }
+
         const isUp = item.status === "up";
         const timeString = new Date(item.timestamp).toLocaleTimeString("ru-RU", {
           hour: "2-digit",

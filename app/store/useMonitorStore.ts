@@ -12,7 +12,7 @@ export const useMonitorStore = create<MonitorState>((set) => ({
   sites: [
     {
       id: "demo-1",
-      name: "Основной API Стартапа",
+      name: "Основной API",
       url: "https://mystartup.com",
       isActive: true,
       createdAt: Date.now(),
@@ -45,9 +45,9 @@ export const useMonitorStore = create<MonitorState>((set) => ({
       sites: state.sites.filter((site) => site.id !== id),
     })),
 
-  tickMetrics: () =>
-    set((state) => ({
-      sites: state.sites.map((site) => {
+    tickMetrics: () =>
+    set((state) => {
+      const nextSites = state.sites.map((site) => {
         if (!site.isActive) return site;
 
         const isUp = Math.random() > 0.04;
@@ -60,12 +60,15 @@ export const useMonitorStore = create<MonitorState>((set) => ({
           errorReason: isUp ? undefined : "Gateway Timeout",
         };
 
-        const updatedHistory = [...site.history, newCheck];
-        
+        const currentHistory = site.history || [];
+        const updatedHistory = [...currentHistory, newCheck];
+
         return {
           ...site,
           history: updatedHistory.length > 90 ? updatedHistory.slice(1) : updatedHistory,
         };
-      }),
-    })),
+      });
+
+      return { sites: nextSites };
+    }),
 }));

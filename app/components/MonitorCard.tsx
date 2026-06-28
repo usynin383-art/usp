@@ -3,6 +3,7 @@ import { MonitorSite } from "../types/monitor";
 import { StatusBadge } from "./StatusBadge";
 import { FC } from "react";
 import { useMonitorStore } from "../store/useMonitorStore";
+import Link from "next/link";
 
 interface MonitorCardProps {
     site: MonitorSite;
@@ -13,12 +14,14 @@ export const MonitorCard: FC<MonitorCardProps> = ({ site }) => {
     const currentStatus = history[history.length - 1]?.status || "up";
 
     return (
-    <div className="flex flex-col gap-5 p-6 rounded-xl border bg-white border-slate-100 shadow-sm transition-all dark:bg-slate-900 dark:border-slate-800">
+    <div className="flex flex-col gap-5 p-6 rounded-xl border bg-white border-slate-100 shadow-sm transition-all dark:bg-slate-900 dark:border-slate-800 my-2">
         <div className="flex items-start justify-between gap-4">
             <div>
-                <h2 className="text-lg font-semibold tracking-tight text-slate-900 dark:text-slate-50">
-                    {site.name}
-                </h2>
+                <Link href={`/dashboard/${site.id}`}>
+                    <h3 className="text-base font-bold text-slate-900 dark:text-white hover:text-indigo-500 transition-colors cursor-pointer">
+                        {site.name}
+                    </h3>
+                </Link>
                 <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
                     {site.url}
                 </p>

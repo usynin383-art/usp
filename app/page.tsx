@@ -1,17 +1,43 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "./components/Button";
 import { Modal } from "./components/Modal";
 import { MonitorCard } from "./components/MonitorCard";
 import { useMonitorStore } from "./store/useMonitorStore";
+import { AddMonitorForm } from "./components/AddMonitorForm";
 
 export default function Home() {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   const sites = useMonitorStore((state) => state.sites);
+  const tickMetrics = useMonitorStore((state) => state.tickMetrics);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      tickMetrics();
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [tickMetrics]);
 
   const Cards = sites.map((site) => <MonitorCard key={site.id} site={site} />);
 
   return (
-    Cards
+    <>
+      <div className="mb-10">
+        <Button onClick={() => setIsModalOpen(true)}>Add Site</Button>
+        <Modal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          title="Add Site Monitor"
+          description="Add a new site to monitor"
+        >
+          <AddMonitorForm onSuccess={() => setIsModalOpen(false)} />
+        </Modal>
+      </div>
+          
+      {Cards}
+    </>
   );
 }
