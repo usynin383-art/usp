@@ -1,10 +1,12 @@
 "use client";
 
-import { FC } from "react";
+import { FC, useState } from "react";
 import Link from "next/link";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { useMonitorStore } from "@/app/store/useMonitorStore";
 import { Button } from "./Button";
+import { IncidentLogsTable } from "./IncidentLogsTable";
+import { NameTypeValue } from "recharts/types/component/DefaultTooltipContent";
 
 interface ContainerProps {
   siteId: string;
@@ -12,16 +14,14 @@ interface ContainerProps {
 
 interface CustomTooltipProps {
   active?: boolean;
-  payload?: Array<{ value: number; payload: { name: string } }>;
+  payload?: NameTypeValue[];
 }
 
-const CustomChartTooltip: React.FC<CustomTooltipProps> = ({ active, payload }) => {
+const CustomChartTooltip: FC<CustomTooltipProps> = ({ active, payload }) => {
   if (!active || !payload || !payload.length) return null;
-
   const data = payload[0];
-
   return (
-    <div className="z-50 select-none rounded-lg bg-slate-950 px-3 py-2 font-mono text-[11px] leading-relaxed text-slate-200 border border-slate-800 shadow-2xl animate-in fade-in-0 zoom-in-95 duration-100">
+    <div className="z-50 select-none rounded-lg bg-slate-950 px-3 py-2 font-mono text-[11px] leading-relaxed text-slate-200 border border-slate-800 shadow-2xl">
       <div className="flex flex-col gap-0.5">
         <p className="font-bold text-slate-400">{data.payload.name}</p>
         <p>
@@ -34,10 +34,12 @@ const CustomChartTooltip: React.FC<CustomTooltipProps> = ({ active, payload }) =
 };
 
 export const SiteAnalyticsContainer: FC<ContainerProps> = ({ siteId }) => {
+  const [filterMode, setFilterMode] = useState<"all" | "errors">("all");
+
   const site = useMonitorStore((state) => 
     state.sites.find((s) => s.id === siteId)
   );
-
+  
   if (!site) {
     return (
       <div className="flex flex-col items-center justify-center pt-20 text-center">
@@ -54,6 +56,13 @@ export const SiteAnalyticsContainer: FC<ContainerProps> = ({ siteId }) => {
     name: new Date(check.timestamp).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }),
     ping: check.latency,
   }));
+
+  const filteredHistory = site.history.filter((item) => {
+    if (filterMode === "errors") {
+      return item.statusCode !== 200;
+    }
+    return true;
+  });
 
   return (
     <div className="space-y-6">
@@ -80,33 +89,48 @@ export const SiteAnalyticsContainer: FC<ContainerProps> = ({ siteId }) => {
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border-main)" vertical={false} />
-              <XAxis 
-                dataKey="name" 
-                stroke="#94a3b8" 
-                fontSize={10} 
-                tickLine={false} 
-                axisLine={false}
-                dy={10}
-              />
-              <YAxis 
-                stroke="#94a3b8" 
-                fontSize={10} 
-                tickLine={false} 
-                axisLine={false} 
-                dx={-10}
-              />
+              <XAxis dataKey="name" stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} dy={10} />
+              <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} dx={-10} />
               <Tooltip content={<CustomChartTooltip />} />
-              <Area 
-                type="monotone" 
-                dataKey="ping" 
-                stroke="#6366f1" 
-                strokeWidth={2} 
-                fillOpacity={1} 
-                fill="url(#colorPing)" 
-              />
+              <Area type="monotone" dataKey="ping" stroke="#6366f1" strokeWidth={2} fillOpacity={1} fill="url(#colorPing)" />
             </AreaChart>
           </ResponsiveContainer>
         </div>
+      </div>
+
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400">Журнал проверок</h3>
+          
+          <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800/60 p-1 rounded-xl border border-[var(--color-border-main)]">
+            <button
+              type="button"
+              onClick={() => setFilterMode("all")}
+              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-all duration-150 cursor-pointer
+                ${filterMode === "all"
+                  ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs"
+                  : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                }
+              `}
+            >
+              Все логи
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilterMode("errors")}
+              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-all duration-150 cursor-pointer
+                ${filterMode === "errors"
+                  ? "bg-rose-500 text-white shadow-xs"
+                  : "text-slate-500 hover:text-rose-500"
+                }
+              `}
+            >
+              Только ошибки
+            </button>
+          </div>
+        </div>
+
+        <IncidentLogsTable history={filteredHistory} />
       </div>
     </div>
   );
