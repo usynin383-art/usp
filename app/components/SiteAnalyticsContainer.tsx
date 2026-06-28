@@ -10,6 +10,29 @@ interface ContainerProps {
   siteId: string;
 }
 
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: Array<{ value: number; payload: { name: string } }>;
+}
+
+const CustomChartTooltip: React.FC<CustomTooltipProps> = ({ active, payload }) => {
+  if (!active || !payload || !payload.length) return null;
+
+  const data = payload[0];
+
+  return (
+    <div className="z-50 select-none rounded-lg bg-slate-950 px-3 py-2 font-mono text-[11px] leading-relaxed text-slate-200 border border-slate-800 shadow-2xl animate-in fade-in-0 zoom-in-95 duration-100">
+      <div className="flex flex-col gap-0.5">
+        <p className="font-bold text-slate-400">{data.payload.name}</p>
+        <p>
+          Задержка:{" "}
+          <span className="text-indigo-400 font-bold">{data.value} ms</span>
+        </p>
+      </div>
+    </div>
+  );
+};
+
 export const SiteAnalyticsContainer: FC<ContainerProps> = ({ siteId }) => {
   const site = useMonitorStore((state) => 
     state.sites.find((s) => s.id === siteId)
@@ -72,7 +95,7 @@ export const SiteAnalyticsContainer: FC<ContainerProps> = ({ siteId }) => {
                 axisLine={false} 
                 dx={-10}
               />
-              <Tooltip />
+              <Tooltip content={<CustomChartTooltip />} />
               <Area 
                 type="monotone" 
                 dataKey="ping" 
