@@ -1,51 +1,112 @@
 import { create } from "zustand";
 import { MonitorSite, CheckResult } from "../types/monitor";
+import { supabase } from "../lib/supabase";
 
 interface MonitorState {
   sites: MonitorSite[];
-  addSite: (name: string, url: string) => void;
-  removeSite: (id: string) => void;
+  isLoading: boolean;
+  fetchSites: () => Promise<void>;
+  addSite: (name: string, url: string) => Promise<void>;
+  removeSite: (id: string) => Promise<void>;
   tickMetrics: () => void;
 }
 
-export const useMonitorStore = create<MonitorState>((set) => ({
-  sites: [
-    {
-      id: "demo-1",
-      name: "Основной API",
-      url: "https://mystartup.com",
-      isActive: true,
-      createdAt: Date.now(),
-      history: Array.from({ length: 89 }, (_, i) => ({
-        id: `init-${i}`,
-        timestamp: Date.now() - (89 - i) * 60000,
-        status: "up",
-        latency: 120,
-        statusCode: 200,
-})),
+export const useMonitorStore = create<MonitorState>((set, get) => ({
+  sites: [],
+  isLoading: false,
 
-    },
-  ],
+   fetchSites: async () => {
+    set({ isLoading: true });
+    try {
+      const { data: monitors, error: monitorsError } = await supabase
+        .from("monitors")
+        .select("*, check_results(*)");
 
-  addSite: (name, url) =>
-    set((state) => {
+      if (monitorsError) throw monitorsError;
+
+      // Описываем структуру ответа из базы, чтобы избавиться от any
+      interface DbCheckResult {
+        id: number;
+        created_at: string;
+        status: "up" | "down";
+        latency: number;
+        status_code: number;
+        error_reason?: string | null;
+      }
+
+      interface DbMonitor {
+        id: string;
+        name: string;
+        url: string;
+        is_active: boolean;
+        created_at: string;
+        check_results?: DbCheckResult[];
+      }
+
+      const formattedSites: MonitorSite[] = ((monitors as unknown as DbMonitor[]) || []).map((m) => ({
+        id: m.id,
+        name: m.name,
+        url: m.url,
+        isActive: m.is_active,
+        createdAt: new Date(m.created_at).getTime(),
+        history: (m.check_results || [])
+          .map((c) => ({
+            id: c.id.toString(),
+            timestamp: new Date(c.created_at).getTime(),
+            status: c.status,
+            latency: c.latency,
+            statusCode: c.status_code,
+            errorReason: c.error_reason || undefined,
+          }))
+          .sort((a, b) => a.timestamp - b.timestamp),
+      }));
+
+      set({ sites: formattedSites });
+    } catch (error) {
+      console.error("Error fetching sites:", error);
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  addSite: async (name, url) => {
+    try {
+      const mockUserId = "00000000-0000-0000-0000-000000000000";
+
+      const { data, error } = await supabase
+        .from("monitors")
+        .insert([{ name, url, user_id: mockUserId }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
       const newSite: MonitorSite = {
-        id: `site-${Date.now()}`,
-        name,
-        url,
-        isActive: true,
-        createdAt: Date.now(),
+        id: data.id,
+        name: data.name,
+        url: data.url,
+        isActive: data.is_active,
+        createdAt: new Date(data.created_at).getTime(),
         history: [],
       };
-      return { sites: [...state.sites, newSite] };
-    }),
 
-  removeSite: (id) =>
-    set((state) => ({
-      sites: state.sites.filter((site) => site.id !== id),
-    })),
+      set((state) => ({ sites: [...state.sites, newSite] }));
+    } catch (error) {
+      console.error("Error adding site:", error);
+    }
+  },
 
-    tickMetrics: () =>
+  removeSite: async (id) => {
+    try {
+      const { error } = await supabase.from("monitors").delete().eq("id", id);
+      if (error) throw error;
+      set((state) => ({ sites: state.sites.filter((site) => site.id !== id) }));
+    } catch (error) {
+      console.error("Error removing site:", error);
+    }
+  },
+
+  tickMetrics: () => {
     set((state) => {
       const nextSites = state.sites.map((site) => {
         if (!site.isActive) return site;
@@ -70,5 +131,6 @@ export const useMonitorStore = create<MonitorState>((set) => ({
       });
 
       return { sites: nextSites };
-    }),
+    });
+  },
 }));

@@ -11,7 +11,12 @@ export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const sites = useMonitorStore((state) => state.sites);
+  const fetchSites = useMonitorStore((state) => state.fetchSites);
   const tickMetrics = useMonitorStore((state) => state.tickMetrics);
+
+  useEffect(() => {
+    fetchSites();
+  }, [fetchSites]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -21,7 +26,7 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [tickMetrics]);
 
-  const Cards = sites.map((site) => <MonitorCard key={site.id} site={site} />);
+  const Cards = (sites || []).map((site) => <MonitorCard key={site.id} site={site} />);
 
   return (
     <>
