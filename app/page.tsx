@@ -18,13 +18,13 @@ export default function Home() {
     fetchSites();
   }, [fetchSites]);
 
-  useEffect(() => {
+    useEffect(() => {
     const interval = setInterval(() => {
-      tickMetrics();
-    }, 5000);
+      useMonitorStore.getState().tickMetrics();
+    }, 10000); 
 
     return () => clearInterval(interval);
-  }, [tickMetrics]);
+  }, []);
 
   const Cards = (sites || []).map((site) => <MonitorCard key={site.id} site={site} />);
 

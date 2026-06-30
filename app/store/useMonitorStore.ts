@@ -15,16 +15,18 @@ export const useMonitorStore = create<MonitorState>((set, get) => ({
   sites: [],
   isLoading: false,
 
-   fetchSites: async () => {
+  fetchSites: async () => {
     set({ isLoading: true });
     try {
       const { data: monitors, error: monitorsError } = await supabase
         .from("monitors")
         .select("*, check_results(*)");
 
+  
+
+
       if (monitorsError) throw monitorsError;
 
-      // Описываем структуру ответа из базы, чтобы избавиться от any
       interface DbCheckResult {
         id: number;
         created_at: string;
@@ -71,11 +73,15 @@ export const useMonitorStore = create<MonitorState>((set, get) => ({
 
   addSite: async (name, url) => {
     try {
-      const mockUserId = "00000000-0000-0000-0000-000000000000";
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !user) {
+        throw new Error("Пользователь не авторизован");
+      }
 
       const { data, error } = await supabase
         .from("monitors")
-        .insert([{ name, url, user_id: mockUserId }])
+        .insert([{ name, url, user_id: user.id }])
         .select()
         .single();
 
@@ -106,31 +112,12 @@ export const useMonitorStore = create<MonitorState>((set, get) => ({
     }
   },
 
-  tickMetrics: () => {
-    set((state) => {
-      const nextSites = state.sites.map((site) => {
-        if (!site.isActive) return site;
-
-        const isUp = Math.random() > 0.04;
-        const newCheck: CheckResult = {
-          id: `tick-${Date.now()}-${Math.random()}`,
-          timestamp: Date.now(),
-          status: isUp ? "up" : "down",
-          latency: isUp ? Math.floor(Math.random() * 80) + 100 : 0,
-          statusCode: isUp ? 200 : 504,
-          errorReason: isUp ? undefined : "Gateway Timeout",
-        };
-
-        const currentHistory = site.history || [];
-        const updatedHistory = [...currentHistory, newCheck];
-
-        return {
-          ...site,
-          history: updatedHistory.length > 90 ? updatedHistory.slice(1) : updatedHistory,
-        };
-      });
-
-      return { sites: nextSites };
-    });
-  },
+  tickMetrics: async () => {
+    try {
+      const fetchSites = get().fetchSites;
+      await fetchSites();
+    } catch (error) {
+      console.error("Error ticking metrics:", error);
+    }
+},
 }));
