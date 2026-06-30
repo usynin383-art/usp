@@ -17,3 +17,4 @@ export interface MonitorSite {
     createdAt: number;
     history: CheckResult[];
 }
+

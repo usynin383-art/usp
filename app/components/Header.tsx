@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 
 export const Header = () => {
-  const [darkMode, setDarkMode] = useState(false);
+  const [darkMode, setDarkMode] = useState(true); // По дефолту дашборд пусть будет темным
 
   useEffect(() => {
     const html = document.documentElement;

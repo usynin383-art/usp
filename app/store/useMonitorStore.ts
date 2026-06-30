@@ -1,6 +1,15 @@
 import { create } from "zustand";
-import { MonitorSite, CheckResult } from "../types/monitor";
+import { persist } from 'zustand/middleware'
+import { MonitorSite } from "../types/monitor";
 import { supabase } from "../lib/supabase";
+
+export interface PageCustomization {
+  title: string;
+  theme: "light" | "dark";
+  primaryColor: string;
+  showLatency: boolean;
+  showHeader: boolean;
+}
 
 interface MonitorState {
   sites: MonitorSite[];
@@ -8,12 +17,30 @@ interface MonitorState {
   fetchSites: () => Promise<void>;
   addSite: (name: string, url: string) => Promise<void>;
   removeSite: (id: string) => Promise<void>;
-  tickMetrics: () => void;
+  tickMetrics: () => Promise<void>; 
+  customization: PageCustomization;
+  updateCustomization: (fields: Partial<PageCustomization>) => void;
 }
 
-export const useMonitorStore = create<MonitorState>((set, get) => ({
-  sites: [],
-  isLoading: false,
+export const useMonitorStore = create<MonitorState>()(
+  persist(
+    (set, get) => ({
+      sites: [],
+      isLoading: false,
+
+  customization: {
+    title: "Мой Статус Окружения",
+    theme: "dark",
+    primaryColor: "#10b981",
+    showLatency: true,
+    showHeader: true,
+  },
+
+  updateCustomization: (fields) => {
+    set((state) => ({
+      customization: { ...state.customization, ...fields },
+    }));
+  },
 
   fetchSites: async () => {
     set({ isLoading: true });
@@ -21,9 +48,6 @@ export const useMonitorStore = create<MonitorState>((set, get) => ({
       const { data: monitors, error: monitorsError } = await supabase
         .from("monitors")
         .select("*, check_results(*)");
-
-  
-
 
       if (monitorsError) throw monitorsError;
 
@@ -119,5 +143,10 @@ export const useMonitorStore = create<MonitorState>((set, get) => ({
     } catch (error) {
       console.error("Error ticking metrics:", error);
     }
-},
-}));
+  },
+  }), // <-- Закрываем функции стора
+  {
+    name: "uptime-monitor-storage", // <-- Уникальное имя ключа в LocalStorage браузера
+  }
+ )
+);
