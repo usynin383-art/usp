@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { Header } from "./components/Header";
-import { Sidebar } from "./components/Sidebar";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
 
 const geistSans = Geist({
@@ -26,23 +24,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en">
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
+      <body className="antialiased bg-slate-50 dark:bg-slate-950">
         <TooltipProvider delayDuration={100}>
-      <body className="antialiased">
-        <div className="relative flex min-h-screen flex-col">
-          <Header />
-          <div className='flex flex-1'>
-            <Sidebar />
-            <main className="flex-1 p-6 md:pl-72 transition-all duration-200"> 
-              <div className="mx-auto max-w-5xl">
-                {children}
-              </div>
-            </main>
-          </div>
-        </div>
+          {children}
+        </TooltipProvider>
       </body>
-      </TooltipProvider>
     </html>
   );
 }

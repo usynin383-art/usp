@@ -3,7 +3,7 @@
 import { useMonitorStore } from "@/app/store/useMonitorStore";
 
 export default function BuilderPage() {
-  const { customization, updateCustomization } = useMonitorStore();
+  const { customization, updateCustomization, saveCustomization, isSaving } = useMonitorStore();
 
   const slug = customization.title
     ? customization.title.toLowerCase().replace(/[^a-z0-9]/g, "")
@@ -99,6 +99,15 @@ export default function BuilderPage() {
               </label>
             </div>
           </div>
+
+          <button
+            type="button"
+            disabled={isSaving}
+            onClick={saveCustomization}
+            className="w-full flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-xs hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer"
+          >
+            {isSaving ? "Сохранение настроек..." : "✨ Сохранить настройки в базу"}
+          </button>
 
         </div>
       </div>

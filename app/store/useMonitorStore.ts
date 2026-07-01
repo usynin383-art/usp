@@ -14,12 +14,14 @@ export interface PageCustomization {
 interface MonitorState {
   sites: MonitorSite[];
   isLoading: boolean;
+  isSaving: boolean;
   fetchSites: () => Promise<void>;
   addSite: (name: string, url: string) => Promise<void>;
   removeSite: (id: string) => Promise<void>;
   tickMetrics: () => Promise<void>; 
   customization: PageCustomization;
   updateCustomization: (fields: Partial<PageCustomization>) => void;
+  saveCustomization: () => Promise<void>;
 }
 
 export const useMonitorStore = create<MonitorState>()(
@@ -27,6 +29,7 @@ export const useMonitorStore = create<MonitorState>()(
     (set, get) => ({
       sites: [],
       isLoading: false,
+      isSaving: false,
 
   customization: {
     title: "Мой Статус Окружения",
@@ -40,6 +43,38 @@ export const useMonitorStore = create<MonitorState>()(
     set((state) => ({
       customization: { ...state.customization, ...fields },
     }));
+  },
+
+  saveCustomization: async () => {
+    set({ isSaving: true });
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !user) {
+        throw new Error("Пользователь не авторизован");
+      }
+      const currentCustomization = get().customization;
+
+       const { error } = await supabase
+        .from("profiles")
+        .upsert({ 
+          id: user.id, 
+          email: user.email || "", 
+          status_page_title: currentCustomization.title,
+          status_page_theme: currentCustomization.theme,
+          status_page_primary_color: currentCustomization.primaryColor,
+          status_page_show_badge: currentCustomization.showHeader,
+          status_page_show_latency: currentCustomization.showLatency,
+        }, { onConflict: 'id' }); 
+
+      if (error) throw error;
+
+      console.log("Customization saved successfully");
+    } catch (error) {
+      console.error("Error saving customization:", error);
+    } finally {
+      set({ isSaving: false });
+    }
   },
 
   fetchSites: async () => {
@@ -147,6 +182,7 @@ export const useMonitorStore = create<MonitorState>()(
   }), // <-- Закрываем функции стора
   {
     name: "uptime-monitor-storage", // <-- Уникальное имя ключа в LocalStorage браузера
+    partialize: (state) => ({ customization: state.customization }),
   }
  )
 );
